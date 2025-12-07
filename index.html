@@ -1,403 +1,209 @@
-import React, { useState, useEffect } from 'react';
-import { Brain, CheckCircle, ChevronRight, BarChart2, Lightbulb, BookOpen, Clock, Target, RefreshCw, Award, ArrowRight } from 'lucide-react';
-
-// --- Data & Content ---
-
-const QUESTIONS = [
-  {
-    id: 1,
-    question: "새로운 개념을 배울 때 가장 선호하는 방식은?",
-    options: [
-      { text: "도표, 그래프, 사진 자료를 보며 이해한다.", type: "visual" },
-      { text: "강의를 듣거나 친구들과 토론하며 이해한다.", type: "auditory" },
-      { text: "책이나 텍스트 자료를 꼼꼼히 정독한다.", type: "read_write" },
-      { text: "직접 실습해보거나 예제를 풀어보며 익힌다.", type: "kinesthetic" }
-    ]
-  },
-  {
-    id: 2,
-    question: "시험 공부를 할 때 나의 모습은?",
-    options: [
-      { text: "형광펜으로 색칠하고 마인드맵을 그린다.", type: "visual" },
-      { text: "중얼중얼 소리 내어 읽거나 친구에게 설명한다.", type: "auditory" },
-      { text: "요약 노트를 깔끔하게 정리하고 반복해서 읽는다.", type: "read_write" },
-      { text: "과거 기출문제를 풀면서 오답 노트를 만든다.", type: "kinesthetic" }
-    ]
-  },
-  {
-    id: 3,
-    question: "학습 집중력이 떨어질 때 주로 나타나는 증상은?",
-    options: [
-      { text: "주변의 시각적 자극(스마트폰, 정리안된 책상)에 뺏긴다.", type: "visual" },
-      { text: "주변 소음이 거슬리거나 반대로 너무 조용해서 딴생각이 난다.", type: "auditory" },
-      { text: "글자가 눈에 안 들어오고 같은 줄만 반복해서 읽는다.", type: "read_write" },
-      { text: "가만히 앉아있는 게 힘들고 몸을 비비 꼬게 된다.", type: "kinesthetic" }
-    ]
-  },
-  {
-    id: 4,
-    question: "가장 기억에 남는 수업이나 경험은?",
-    options: [
-      { text: "화려한 PPT나 영상 자료가 있었던 수업", type: "visual" },
-      { text: "선생님의 목소리 톤이나 재미있는 이야기가 있던 수업", type: "auditory" },
-      { text: "체계적인 교재와 논리적인 설명이 있던 수업", type: "read_write" },
-      { text: "실험, 실습, 현장 학습 등 직접 참여했던 수업", type: "kinesthetic" }
-    ]
-  },
-  {
-    id: 5,
-    question: "나의 평소 학습 계획 스타일은?",
-    options: [
-      { text: "전체적인 큰 그림을 먼저 그리고 세부 사항을 채운다.", type: "visual" },
-      { text: "계획보다는 그날의 기분이나 흐름에 따라 공부한다.", type: "auditory" },
-      { text: "시간 단위로 꼼꼼하게 리스트를 작성한다.", type: "read_write" },
-      { text: "일단 시작하고 부딪히면서 계획을 수정한다.", type: "kinesthetic" }
-    ]
-  }
-];
-
-const RESULTS = {
-  visual: {
-    title: "직관적 비주얼 탐험가",
-    desc: "당신은 눈으로 보아야 믿고 이해하는 스타일입니다. 텍스트보다는 이미지, 전체적인 흐름 파악에 강점이 있습니다.",
-    strength: "빠른 정보 스캐닝, 구조화 능력, 공간 지각력",
-    weakness: "텍스트만 있는 자료에 대한 피로도, 디테일 놓침",
-    color: "from-blue-500 to-cyan-400",
-    icon: <Brain className="w-12 h-12 text-white" />,
-    plan: [
-      "모든 정보를 인포그래픽이나 마인드맵으로 시각화하세요.",
-      "형광펜 색깔별로 의미를 부여하여(예: 중요=빨강, 근거=파랑) 교재를 구조화하세요.",
-      "유튜브 교육 채널이나 다큐멘터리 등 영상 매체를 적극 활용하세요.",
-      "포스트잇을 활용해 벽에 붙여가며 전체 구조를 조망하는 공부법이 좋습니다."
-    ]
-  },
-  auditory: {
-    title: "소리통한 지식 수집가",
-    desc: "당신은 귀가 열려있을 때 뇌가 깨어납니다. 듣고 말하며 정보를 처리하는 능력이 탁월합니다.",
-    strength: "외국어 학습, 토론, 강의 내용 기억, 구두 설명",
-    weakness: "시끄러운 환경에서의 집중력 저하, 도표 해석",
-    color: "from-purple-500 to-pink-400",
-    icon: <Lightbulb className="w-12 h-12 text-white" />,
-    plan: [
-      "공부한 내용을 녹음해서 이동 시간에 라디오처럼 들으세요.",
-      "'누군가에게 가르친다'고 상상하며 소리 내어 설명하는 '파인만 학습법'을 쓰세요.",
-      "스터디 그룹에 참여하여 토론하며 학습하세요.",
-      "백색 소음이나 집중력을 높여주는 음악(가사 없는)을 활용하세요."
-    ]
-  },
-  read_write: {
-    title: "논리적 텍스트 분석가",
-    desc: "당신은 읽고 쓰는 전통적인 학습법의 강자입니다. 논리적이고 체계적인 텍스트 정보 처리에 능합니다.",
-    strength: "서술형 답안 작성, 논리적 사고, 방대한 자료 요약",
-    weakness: "지루한 반복 학습, 실전 응용력 부족 가능성",
-    color: "from-green-500 to-emerald-400",
-    icon: <BookOpen className="w-12 h-12 text-white" />,
-    plan: [
-      "교재의 목차를 먼저 훑어보고 나만의 요약 노트를 만드세요.",
-      "핵심 키워드를 문장으로 다시 써보는 '재진술(Paraphrasing)' 훈련을 하세요.",
-      "다양한 참고 문헌을 비교하며 읽는 것이 깊은 이해를 돕습니다.",
-      "에세이 쓰기나 블로그 정리 등 글쓰기를 통한 아웃풋을 늘리세요."
-    ]
-  },
-  kinesthetic: {
-    title: "실전형 행동파 러너",
-    desc: "당신은 책상 앞보다는 현장이 어울립니다. 직접 몸을 움직이고 경험할 때 가장 빠르게 배웁니다.",
-    strength: "문제 해결 능력, 실험/실습, 단기 집중력, 직관",
-    weakness: "장시간 정적인 학습, 추상적인 이론 이해",
-    color: "from-orange-500 to-amber-400",
-    icon: <Target className="w-12 h-12 text-white" />,
-    plan: [
-      "50분 공부보다는 25분 공부+5분 휴식의 '뽀모도로 기법'을 활용하세요.",
-      "이론 공부 후에는 즉시 관련 문제 풀이나 실습을 진행하세요.",
-      "스탠딩 데스크를 쓰거나 걸어 다니며 암기하는 등 신체 활동을 추가하세요.",
-      "개념을 실제 사례나 내 경험에 빗대어 연결하는 연습을 하세요."
-    ]
-  }
-};
-
-// --- Components ---
-
-export default function LearningApp() {
-  const [step, setStep] = useState('intro'); // intro, quiz, analyzing, result
-  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
-  const [answers, setAnswers] = useState([]);
-  const [finalResult, setFinalResult] = useState(null);
-
-  const handleStart = () => {
-    setStep('quiz');
-  };
-
-  const handleAnswer = (type) => {
-    const newAnswers = [...answers, type];
-    setAnswers(newAnswers);
-
-    if (currentQuestionIdx < QUESTIONS.length - 1) {
-      setCurrentQuestionIdx(currentQuestionIdx + 1);
-    } else {
-      setStep('analyzing');
-      analyzeResults(newAnswers);
-    }
-  };
-
-  const analyzeResults = (finalAnswers) => {
-    // Count frequencies
-    const counts = finalAnswers.reduce((acc, curr) => {
-      acc[curr] = (acc[curr] || 0) + 1;
-      return acc;
-    }, {});
-
-    // Find max
-    let maxType = 'visual';
-    let maxCount = 0;
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학습 성향 진단 (Study Plan)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    Object.entries(counts).forEach(([type, count]) => {
-      if (count > maxCount) {
-        maxCount = count;
-        maxType = type;
-      }
-    });
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background-color: #f3f4f6; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-    // Simulate AI processing time
-    setTimeout(() => {
-      setFinalResult(RESULTS[maxType]);
-      setStep('result');
-    }, 2500);
-  };
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-  const resetApp = () => {
-    setStep('intro');
-    setCurrentQuestionIdx(0);
-    setAnswers([]);
-    setFinalResult(null);
-  };
+        // 아이콘 대신 이모지 사용 (별도 설치 없이 작동하게 하기 위함)
+        const Icons = {
+            Brain: () => <span>🧠</span>,
+            CheckCircle: () => <span>✅</span>,
+            ChevronRight: () => <span>▶️</span>,
+            BarChart2: () => <span>📊</span>,
+            Lightbulb: () => <span>💡</span>,
+            BookOpen: () => <span>📖</span>,
+            Clock: () => <span>⏰</span>,
+            Target: () => <span>🎯</span>,
+            RefreshCw: () => <span>🔄</span>,
+            Award: () => <span>🏆</span>,
+            ArrowRight: () => <span>➡️</span>
+        };
 
-  return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-800 selection:bg-indigo-100 selection:text-indigo-900">
-      <div className="max-w-md mx-auto min-h-screen bg-white shadow-2xl overflow-hidden relative flex flex-col">
-        
-        {/* Header (Always visible slightly) */}
-        <header className="px-6 py-4 flex justify-between items-center bg-white z-10 border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 text-white p-1.5 rounded-lg">
-              <Brain size={20} />
-            </div>
-            <span className="font-bold text-lg text-gray-900 tracking-tight">LearnAI</span>
-          </div>
-          <div className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
-            Beta
-          </div>
-        </header>
+        const QUESTIONS = [
+            { id: 1, question: "새로운 개념을 배울 때 가장 선호하는 방식은?", options: [ { text: "도표, 그래프, 사진 자료를 보며 이해한다.", type: "visual" }, { text: "강의를 듣거나 친구들과 토론하며 이해한다.", type: "auditory" }, { text: "책이나 텍스트 자료를 꼼꼼히 정독한다.", type: "read_write" }, { text: "직접 실습해보거나 예제를 풀어보며 익힌다.", type: "kinesthetic" } ] },
+            { id: 2, question: "시험 공부를 할 때 나의 모습은?", options: [ { text: "형광펜으로 색칠하고 마인드맵을 그린다.", type: "visual" }, { text: "중얼중얼 소리 내어 읽거나 친구에게 설명한다.", type: "auditory" }, { text: "요약 노트를 깔끔하게 정리하고 반복해서 읽는다.", type: "read_write" }, { text: "과거 기출문제를 풀면서 오답 노트를 만든다.", type: "kinesthetic" } ] },
+            { id: 3, question: "학습 집중력이 떨어질 때 주로 나타나는 증상은?", options: [ { text: "주변의 시각적 자극(스마트폰, 정리안된 책상)에 뺏긴다.", type: "visual" }, { text: "주변 소음이 거슬리거나 반대로 너무 조용해서 딴생각이 난다.", type: "auditory" }, { text: "글자가 눈에 안 들어오고 같은 줄만 반복해서 읽는다.", type: "read_write" }, { text: "가만히 앉아있는 게 힘들고 몸을 비비 꼬게 된다.", type: "kinesthetic" } ] },
+            { id: 4, question: "가장 기억에 남는 수업이나 경험은?", options: [ { text: "화려한 PPT나 영상 자료가 있었던 수업", type: "visual" }, { text: "선생님의 목소리 톤이나 재미있는 이야기가 있던 수업", type: "auditory" }, { text: "체계적인 교재와 논리적인 설명이 있던 수업", type: "read_write" }, { text: "실험, 실습, 현장 학습 등 직접 참여했던 수업", type: "kinesthetic" } ] },
+            { id: 5, question: "나의 평소 학습 계획 스타일은?", options: [ { text: "전체적인 큰 그림을 먼저 그리고 세부 사항을 채운다.", type: "visual" }, { text: "계획보다는 그날의 기분이나 흐름에 따라 공부한다.", type: "auditory" }, { text: "시간 단위로 꼼꼼하게 리스트를 작성한다.", type: "read_write" }, { text: "일단 시작하고 부딪히면서 계획을 수정한다.", type: "kinesthetic" } ] }
+        ];
 
-        {/* Content Area */}
-        <main className="flex-1 flex flex-col relative">
-          
-          {/* STEP 1: Intro */}
-          {step === 'intro' && (
-            <div className="flex-1 flex flex-col justify-center px-8 animate-fade-in">
-              <div className="text-center mb-10">
-                <div className="inline-block p-4 rounded-full bg-indigo-50 mb-6 relative">
-                  <div className="absolute inset-0 bg-indigo-200 rounded-full animate-ping opacity-20"></div>
-                  <BarChart2 className="w-12 h-12 text-indigo-600" />
-                </div>
-                <h1 className="text-3xl font-extrabold text-gray-900 mb-4 leading-tight">
-                  나의 학습 DNA<br/>
-                  <span className="text-indigo-600">AI로 분석하기</span>
-                </h1>
-                <p className="text-gray-500 text-lg leading-relaxed">
-                  왜 공부가 안될까요? 당신의 잘못이 아닙니다.<br/>
-                  성향에 맞는 학습법을 찾아드립니다.
-                </p>
-              </div>
+        const RESULTS = {
+            visual: { title: "직관적 비주얼 탐험가", desc: "당신은 눈으로 보아야 믿고 이해하는 스타일입니다. 텍스트보다는 이미지, 전체적인 흐름 파악에 강점이 있습니다.", strength: "빠른 정보 스캐닝, 구조화 능력, 공간 지각력", weakness: "텍스트만 있는 자료에 대한 피로도, 디테일 놓침", color: "from-blue-500 to-cyan-400", icon: Icons.Brain, plan: ["모든 정보를 인포그래픽이나 마인드맵으로 시각화하세요.", "형광펜 색깔별로 의미를 부여하여(예: 중요=빨강, 근거=파랑) 교재를 구조화하세요.", "유튜브 교육 채널이나 다큐멘터리 등 영상 매체를 적극 활용하세요.", "포스트잇을 활용해 벽에 붙여가며 전체 구조를 조망하는 공부법이 좋습니다."] },
+            auditory: { title: "소리 통한 지식 수집가", desc: "당신은 귀가 열려 있을 때 뇌가 깨어납니다. 듣고 말하며 정보를 처리하는 능력이 탁월합니다.", strength: "외국어 학습, 토론, 강의 내용 기억, 구두 설명", weakness: "시끄러운 환경에서의 집중력 저하, 도표 해석", color: "from-purple-500 to-pink-400", icon: Icons.Brain, plan: ["공부한 내용을 녹음해서 이동 시간에 라디오처럼 들으세요.", "'누군가에게 가르친다'고 상상하며 소리 내어 설명하는 '파인만 학습법'을 쓰세요.", "스터디 그룹에 참여하여 토론하며 학습하세요.", "백색 소음이나 집중력을 높여주는 음악(가사 없는)을 활용하세요."] },
+            read_write: { title: "논리적 텍스트 분석가", desc: "당신은 읽고 쓰는 전통적인 학습법의 강자입니다. 논리적이고 체계적인 텍스트 정보 처리에 능합니다.", strength: "서술형 답안 작성, 논리적 사고, 방대한 자료 요약", weakness: "지루한 반복 학습, 실전 응용력 부족 가능성", color: "from-green-500 to-emerald-400", icon: Icons.Brain, plan: ["교재의 목차를 먼저 훑어보고 나만의 요약 노트를 만드세요.", "핵심 키워드를 문장으로 다시 써보는 '재진술(Paraphrasing)' 훈련을 하세요.", "다양한 참고 문헌을 비교하며 읽는 것이 깊은 이해를 돕습니다.", "에세이 쓰기나 블로그 정리 등 글쓰기를 통한 아웃풋을 늘리세요."] },
+            kinesthetic: { title: "실전형 행동파 러너", desc: "당신은 책상 앞보다는 현장이 어울립니다. 직접 몸을 움직이고 경험할 때 가장 빠르게 배웁니다.", strength: "문제 해결 능력, 실험/실습, 단기 집중력, 직관", weakness: "장시간 정적인 학습, 추상적인 이론 이해", color: "from-orange-500 to-amber-400", icon: Icons.Brain, plan: ["50분 공부보다 25분 공부+5분 휴식의 '뽀모도로 기법'을 활용하세요.", "이론 공부 후에는 즉시 관련 문제 풀이나 실습을 진행하세요.", "스탠딩 데스크를 쓰거나 걸어 다니며 암기하는 등 신체 활동을 추가하세요.", "개념을 실제 사례나 내 경험에 빗대어 연결하는 연습을 하세요."] }
+        };
 
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <div className="bg-white p-2 rounded-full shadow-sm text-blue-500"><Award size={20}/></div>
-                  <span className="font-medium text-gray-600">내 학습 유형 진단</span>
-                </div>
-                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <div className="bg-white p-2 rounded-full shadow-sm text-purple-500"><Lightbulb size={20}/></div>
-                  <span className="font-medium text-gray-600">맞춤형 실천 솔루션</span>
-                </div>
-              </div>
+        function LearningApp() {
+            const [step, setStep] = useState('intro');
+            const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
+            const [answers, setAnswers] = useState([]);
+            const [finalResult, setFinalResult] = useState(null);
 
-              <button 
-                onClick={handleStart}
-                className="mt-12 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-indigo-200 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 text-lg"
-              >
-                진단 시작하기 <ArrowRight size={20}/>
-              </button>
-            </div>
-          )}
+            const handleStart = () => { setStep('quiz'); };
 
-          {/* STEP 2: Quiz */}
-          {step === 'quiz' && (
-            <div className="flex-1 flex flex-col px-6 py-8 animate-fade-in">
-              {/* Progress Bar */}
-              <div className="w-full bg-gray-100 h-2 rounded-full mb-8">
-                <div 
-                  className="bg-indigo-600 h-2 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${((currentQuestionIdx + 1) / QUESTIONS.length) * 100}%` }}
-                ></div>
-              </div>
+            const handleAnswer = (type) => {
+                const newAnswers = [...answers, type];
+                setAnswers(newAnswers);
+                if (currentQuestionIdx < QUESTIONS.length - 1) {
+                    setCurrentQuestionIdx(currentQuestionIdx + 1);
+                } else {
+                    setStep('analyzing');
+                    analyzeResults(newAnswers);
+                }
+            };
 
-              <div className="mb-2">
-                <span className="text-indigo-600 font-bold text-sm tracking-wider">Q{QUESTIONS[currentQuestionIdx].id}</span>
-              </div>
-              
-              <h2 className="text-2xl font-bold text-gray-900 mb-8 leading-snug">
-                {QUESTIONS[currentQuestionIdx].question}
-              </h2>
+            const analyzeResults = (finalAnswers) => {
+                const counts = finalAnswers.reduce((acc, curr) => {
+                    acc[curr] = (acc[curr] || 0) + 1;
+                    return acc;
+                }, {});
+                let maxType = 'visual';
+                let maxCount = 0;
+                Object.entries(counts).forEach(([type, count]) => {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        maxType = type;
+                    }
+                });
+                setTimeout(() => {
+                    setFinalResult(RESULTS[maxType]);
+                    setStep('result');
+                }, 2500);
+            };
 
-              <div className="flex-1 space-y-3">
-                {QUESTIONS[currentQuestionIdx].options.map((option, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleAnswer(option.type)}
-                    className="w-full text-left p-5 rounded-xl border-2 border-gray-100 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200 group relative overflow-hidden"
-                  >
-                     <div className="relative z-10 flex items-center justify-between">
-                        <span className="text-gray-700 font-medium group-hover:text-indigo-900 text-lg">
-                          {option.text}
-                        </span>
-                        <ChevronRight className="text-gray-300 group-hover:text-indigo-500 transition-colors" size={20}/>
-                     </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+            const resetApp = () => {
+                setStep('intro');
+                setCurrentQuestionIdx(0);
+                setAnswers([]);
+                setFinalResult(null);
+            };
 
-          {/* STEP 3: Analyzing */}
-          {step === 'analyzing' && (
-            <div className="flex-1 flex flex-col justify-center items-center px-8 bg-gray-50 animate-fade-in">
-              <div className="relative mb-8">
-                <div className="w-24 h-24 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                   <Brain className="text-indigo-600 animate-pulse" size={32} />
-                </div>
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">AI 분석 중입니다...</h3>
-              <p className="text-gray-500 text-center animate-pulse">
-                답변 패턴을 분석하여<br/>최적의 학습 전략을 수립하고 있습니다.
-              </p>
-              
-              <div className="mt-8 w-full max-w-xs space-y-2">
-                <div className="flex items-center gap-3 text-sm text-gray-400">
-                  <CheckCircle size={16} className="text-green-500" />
-                  <span>데이터 수집 완료</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-400 delay-700 animate-fade-in">
-                  <CheckCircle size={16} className="text-green-500" />
-                  <span>학습 성향 매핑 중...</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-gray-400 delay-1000 animate-fade-in">
-                  <CheckCircle size={16} className="text-green-500" />
-                  <span>솔루션 생성 중...</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* STEP 4: Result */}
-          {step === 'result' && finalResult && (
-            <div className="flex-1 overflow-y-auto animate-fade-in custom-scrollbar">
-              {/* Top Banner */}
-              <div className={`w-full p-8 bg-gradient-to-br ${finalResult.color} text-white rounded-b-[2.5rem] shadow-lg mb-6 relative overflow-hidden`}>
-                <div className="absolute top-0 right-0 p-10 opacity-10 transform translate-x-1/4 -translate-y-1/4">
-                  <Brain size={150} />
-                </div>
-                
-                <div className="relative z-10 flex flex-col items-center text-center">
-                  <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm mb-4">
-                    {finalResult.icon}
-                  </div>
-                  <h2 className="text-sm font-semibold uppercase tracking-widest opacity-80 mb-1">나의 학습 타입</h2>
-                  <h1 className="text-3xl font-bold mb-4">{finalResult.title}</h1>
-                  <p className="text-white/90 leading-relaxed font-medium">
-                    {finalResult.desc}
-                  </p>
-                </div>
-              </div>
-
-              <div className="px-6 pb-10 space-y-6">
-                
-                {/* Strength/Weakness Cards */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-2 mb-2 text-blue-600">
-                      <Award size={18} />
-                      <span className="font-bold text-sm">강점</span>
+            // --- UI 렌더링 ---
+            if (step === 'intro') {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-4">
+                        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden p-8 text-center">
+                            <div className="mx-auto bg-blue-100 p-4 rounded-full w-20 h-20 flex items-center justify-center mb-6">
+                                <Icons.Brain />
+                            </div>
+                            <h1 className="text-3xl font-bold text-gray-800 mb-4">나의 학습 성향 진단</h1>
+                            <p className="text-gray-600 mb-8">
+                                나는 어떻게 공부할 때 가장 효율적일까요?<br />
+                                간단한 테스트로 나만의 '최적 공부법'을 찾아보세요.
+                            </p>
+                            <button onClick={handleStart} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition duration-300 flex items-center justify-center gap-2">
+                                시작하기 <Icons.ArrowRight />
+                            </button>
+                        </div>
                     </div>
-                    <p className="text-gray-600 text-sm leading-snug">{finalResult.strength}</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                    <div className="flex items-center gap-2 mb-2 text-red-500">
-                      <Clock size={18} />
-                      <span className="font-bold text-sm">주의점</span>
+                );
+            }
+
+            if (step === 'quiz') {
+                const q = QUESTIONS[currentQuestionIdx];
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-4">
+                        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden p-6">
+                            <div className="mb-6">
+                                <div className="flex justify-between text-sm text-gray-500 mb-2">
+                                    <span>Question {currentQuestionIdx + 1}</span>
+                                    <span>{QUESTIONS.length}</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{ width: `${((currentQuestionIdx + 1) / QUESTIONS.length) * 100}%` }}></div>
+                                </div>
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-800 mb-6 min-h-[60px]">{q.question}</h2>
+                            <div className="space-y-3">
+                                {q.options.map((opt, idx) => (
+                                    <button key={idx} onClick={() => handleAnswer(opt.type)} className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition duration-200 flex items-center justify-between group">
+                                        <span className="text-gray-700 group-hover:text-blue-700">{opt.text}</span>
+                                        <Icons.ChevronRight />
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                    <p className="text-gray-600 text-sm leading-snug">{finalResult.weakness}</p>
-                  </div>
-                </div>
+                );
+            }
 
-                {/* AI Action Plan */}
-                <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
-                  <div className="bg-gray-900 px-5 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                       <Lightbulb className="text-yellow-400" size={20} />
-                       <span className="text-white font-bold">AI 맞춤형 실천 플랜</span>
+            if (step === 'analyzing') {
+                return (
+                    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-white">
+                        <div className="animate-spin text-blue-600 mb-4 text-4xl">
+                           <Icons.RefreshCw />
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-800 animate-pulse">결과 분석 중...</h2>
+                        <p className="text-gray-500 mt-2">당신의 학습 패턴을 파악하고 있습니다.</p>
                     </div>
-                    <span className="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded">Daily</span>
-                  </div>
-                  
-                  <div className="p-5">
-                    <ul className="space-y-4">
-                      {finalResult.plan.map((item, idx) => (
-                        <li key={idx} className="flex gap-3 items-start">
-                          <div className={`mt-1 min-w-[20px] h-[20px] rounded-full flex items-center justify-center text-xs font-bold text-white bg-gradient-to-br ${finalResult.color}`}>
-                            {idx + 1}
-                          </div>
-                          <span className="text-gray-700 font-medium leading-relaxed text-sm sm:text-base">
-                            {item}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="bg-gray-50 px-5 py-3 text-center border-t border-gray-100">
-                     <p className="text-xs text-gray-400">이 플랜을 캡처해서 책상 앞에 붙여보세요!</p>
-                  </div>
-                </div>
+                );
+            }
 
-                {/* Restart Button */}
-                <button 
-                  onClick={resetApp}
-                  className="w-full bg-white border-2 border-gray-200 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors flex items-center justify-center gap-2"
-                >
-                  <RefreshCw size={18} />
-                  다시 검사하기
-                </button>
+            if (step === 'result' && finalResult) {
+                return (
+                    <div className={`min-h-screen py-10 px-4 bg-gradient-to-br ${finalResult.color} flex items-center justify-center`}>
+                        <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl overflow-hidden">
+                            <div className="p-8 text-center">
+                                <div className="inline-block p-4 rounded-full bg-gray-100 mb-4 text-4xl">
+                                    <finalResult.icon />
+                                </div>
+                                <h2 className="text-3xl font-bold text-gray-800 mb-2">{finalResult.title}</h2>
+                                <p className="text-gray-600 leading-relaxed mb-6">{finalResult.desc}</p>
+                                
+                                <div className="bg-gray-50 rounded-2xl p-5 mb-6 text-left">
+                                    <div className="flex items-start gap-3 mb-3">
+                                        <div className="text-green-500 mt-1"><Icons.CheckCircle /></div>
+                                        <div><span className="font-bold text-gray-800">강점:</span> <span className="text-gray-600">{finalResult.strength}</span></div>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <div className="text-red-500 mt-1"><Icons.Target /></div>
+                                        <div><span className="font-bold text-gray-800">주의:</span> <span className="text-gray-600">{finalResult.weakness}</span></div>
+                                    </div>
+                                </div>
 
-              </div>
-            </div>
-          )}
+                                <div className="text-left mb-8">
+                                    <h3 className="flex items-center gap-2 text-lg font-bold text-gray-800 mb-4">
+                                        <Icons.Lightbulb /> 맞춤 공부법 솔루션
+                                    </h3>
+                                    <ul className="space-y-3">
+                                        {finalResult.plan.map((item, idx) => (
+                                            <li key={idx} className="flex items-start gap-3 bg-blue-50 p-3 rounded-lg text-sm text-gray-700">
+                                                <div className="text-blue-500 mt-0.5"><Icons.CheckCircle /></div>
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
 
-        </main>
-      </div>
-      
-      {/* Global Styles for Animations */}
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
+                                <button onClick={resetApp} className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-4 rounded-xl transition duration-300 flex items-center justify-center gap-2">
+                                    <Icons.RefreshCw /> 다시 테스트하기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+            return null;
         }
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out forwards;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 0px;
-          background: transparent;
-        }
-      `}</style>
-    </div>
-  );
-}
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<LearningApp />);
+    </script>
+</body>
+</html>
